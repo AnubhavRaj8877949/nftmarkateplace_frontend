@@ -45,7 +45,7 @@ type NFTDetail = {
 export default function NFTDetail() {
     const { contractAddress, tokenId } = useParams();
     const { address: userAddress, isConnected } = useAccount();
-    const [isImageError, setIsImageError] = useState(false);
+
 
     const { data: nft, isLoading, refetch } = useQuery<NFTDetail>({
         queryKey: ['nft', contractAddress, tokenId],
@@ -73,7 +73,7 @@ export default function NFTDetail() {
 
     const activeListing = nft?.listings.find(l => l.active);
     const isOwner = userAddress?.toLowerCase() === nft?.ownerAddress.toLowerCase();
-    const userActiveOffer = nft?.offers.find(o => o.offererAddress.toLowerCase() === userAddress?.toLowerCase() && o.active);
+    // const userActiveOffer = nft?.offers.find(o => o.offererAddress.toLowerCase() === userAddress?.toLowerCase() && o.active);
     console.log(" nft:", nft)
     const handleBuy = () => {
         if (!activeListing) return;
@@ -126,7 +126,7 @@ export default function NFTDetail() {
 
     if (!nft) return <div className="text-center py-20 text-white text-2xl">NFT not found</div>;
 
-    const isVideo = nft.image?.endsWith('.mp4') || nft.image?.endsWith('.webm') || isImageError;
+    // const isVideo = nft.image?.endsWith('.mp4') || nft.image?.endsWith('.webm') || isImageError;
 
     return (
         <div className="min-h-screen pb-20">

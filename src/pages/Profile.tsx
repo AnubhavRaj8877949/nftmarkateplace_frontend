@@ -275,7 +275,7 @@ export default function Profile() {
 
                     {activeTab === 'listings' && (
                         <section>
-                            {activeListings.length === 0 ? (
+                            {activeListings?.length === 0 ? (
                                 <div className="bg-gray-800/20 rounded-[48px] p-32 text-center border-2 border-dashed border-gray-800">
                                     <p className="text-gray-500 text-2xl font-black">No active listings.</p>
                                 </div>

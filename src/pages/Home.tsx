@@ -1,7 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { BACKEND_URL, MARKETPLACE_ADDRESS, MARKETPLACE_ABI } from '../constants';
-import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
-import { parseEther } from 'viem';
+import { BACKEND_URL } from '../constants';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 
@@ -30,7 +28,7 @@ type Collection = {
 };
 
 export default function Home() {
-    const { address: userAddress } = useAccount();
+    // const { address: userAddress } = useAccount();
     const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
 
     const { data: collections } = useQuery<Collection[]>({
@@ -52,18 +50,6 @@ export default function Home() {
         },
     });
 
-    const { writeContract, data: hash } = useWriteContract();
-    const { isLoading: isBuying } = useWaitForTransactionReceipt({ hash });
-
-    const handleBuy = (listing: Listing) => {
-        writeContract({
-            address: MARKETPLACE_ADDRESS as `0x${string}`,
-            abi: MARKETPLACE_ABI,
-            functionName: 'buy',
-            args: [listing.nft.contractAddress as `0x${string}`, BigInt(listing.nft.tokenId)],
-            value: parseEther(listing.price),
-        });
-    };
 
     if (isLoading) return (
         <div className="flex justify-center items-center h-[60vh]">
