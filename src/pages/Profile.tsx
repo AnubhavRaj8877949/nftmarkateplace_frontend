@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { BACKEND_URL, MARKETPLACE_ADDRESS, MARKETPLACE_ABI, NFT_ABI } from '../constants';
 import { useParams } from 'react-router-dom';
