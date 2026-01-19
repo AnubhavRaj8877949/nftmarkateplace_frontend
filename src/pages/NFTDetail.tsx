@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { BACKEND_URL, MARKETPLACE_ADDRESS, MARKETPLACE_ABI } from '../constants';
-import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
+import { BACKEND_URL, MARKETPLACE_ADDRESS, MARKETPLACE_ABI, NFT_ABI } from '../constants';
+import { useWriteContract, useWaitForTransactionReceipt, useAccount, useReadContract } from 'wagmi';
 import { parseEther } from 'viem';
 import { useEffect, useState } from 'react';
 
@@ -58,14 +58,25 @@ export default function NFTDetail() {
     const { writeContract, data: hash } = useWriteContract();
     const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
+    const { data: isApprovedForAll, refetch: refetchApproval } = useReadContract({
+        address: nft?.contractAddress as `0x${string}`,
+        abi: NFT_ABI,
+        functionName: 'isApprovedForAll',
+        args: [userAddress as `0x${string}`, MARKETPLACE_ADDRESS as `0x${string}`],
+        query: {
+            enabled: !!userAddress && !!nft?.contractAddress,
+        }
+    });
+
     useEffect(() => {
         if (isSuccess) {
+            refetchApproval();
             // Give indexer 2 seconds to catch up before refetching
             setTimeout(() => {
                 refetch();
-            }, 2000);
+            }, 4000);
         }
-    }, [isSuccess, refetch]);
+    }, [isSuccess, refetch, refetchApproval]);
 
     const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
     const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
@@ -74,7 +85,7 @@ export default function NFTDetail() {
 
     const activeListing = nft?.listings.find(l => l.active);
     const isOwner = userAddress?.toLowerCase() === nft?.ownerAddress.toLowerCase();
-    // const userActiveOffer = nft?.offers.find(o => o.offererAddress.toLowerCase() === userAddress?.toLowerCase() && o.active);
+    const userActiveOffer = nft?.offers.find(o => o.offererAddress.toLowerCase() === userAddress?.toLowerCase() && o.active);
     console.log(" nft:", nft)
     const handleBuy = () => {
         if (!activeListing) return;
@@ -99,6 +110,16 @@ export default function NFTDetail() {
             value: parseEther(offerPrice),
         });
         setIsOfferModalOpen(false);
+        setOfferPrice('');
+    };
+
+    const handleApprove = () => {
+        writeContract({
+            address: nft?.contractAddress as `0x${string}`,
+            abi: NFT_ABI,
+            functionName: 'setApprovalForAll',
+            args: [MARKETPLACE_ADDRESS as `0x${string}`, true],
+        });
     };
 
     const handleAcceptOffer = (offerer: string) => {
@@ -330,22 +351,22 @@ export default function NFTDetail() {
                                         ) : (
                                             <div className="flex flex-col space-y-4">
                                                 <div className="relative">
-                                                    <input
+                                                    {/* <input
                                                         type="number"
                                                         value={listPrice}
                                                         onChange={(e) => setListPrice(e.target.value)}
                                                         className="w-full bg-gray-900/50 border border-gray-600 rounded-2xl p-4 text-xl font-black text-white focus:ring-2 focus:ring-blue-500 outline-none"
                                                         placeholder="Price in CINT"
-                                                    />
-                                                    <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-gray-500">CINT</span>
+                                                    /> */}
+                                                    {/* <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-gray-500">CINT</span> */}
                                                 </div>
-                                                <button
+                                                {/* <button
                                                     onClick={handleList}
                                                     disabled={isConfirming || !listPrice}
                                                     className="bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black text-xl shadow-xl shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
                                                     {isConfirming ? 'Processing...' : 'List for Sale'}
-                                                </button>
+                                                </button> */}
                                             </div>
                                         )
                                     ) : (
@@ -364,7 +385,7 @@ export default function NFTDetail() {
                                         )
                                     )}
 
-                                    {/* <button
+                                    <button
                                         onClick={() => {
                                             if (!isConnected) return alert("Please connect your wallet.");
                                             if (userActiveOffer) return alert("You already have an active offer on this NFT. Cancel it first to make a new one.");
@@ -374,7 +395,7 @@ export default function NFTDetail() {
                                         className={`py-6 rounded-3xl font-black text-xl transition-all border-2 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${activeListing ? 'bg-white/5 hover:bg-white/10 text-white border-white/10' : 'bg-blue-600 hover:bg-blue-700 text-white border-transparent shadow-2xl shadow-blue-900/40 sm:col-span-2'}`}
                                     >
                                         {userActiveOffer ? 'Offer Pending' : 'Make Offer'}
-                                    </button> */}
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -405,12 +426,21 @@ export default function NFTDetail() {
                                                     </div>
                                                 </div>
                                                 {isOwner && (
-                                                    <button
-                                                        onClick={() => handleAcceptOffer(offer.offererAddress)}
-                                                        className="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-2xl font-black text-sm transition-all shadow-lg shadow-green-900/20"
-                                                    >
-                                                        Accept
-                                                    </button>
+                                                    !isApprovedForAll ? (
+                                                        <button
+                                                            onClick={handleApprove}
+                                                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-2xl font-black text-sm transition-all shadow-lg shadow-blue-900/20"
+                                                        >
+                                                            Approve
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => handleAcceptOffer(offer.offererAddress)}
+                                                            className="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-2xl font-black text-sm transition-all shadow-lg shadow-green-900/20"
+                                                        >
+                                                            Accept
+                                                        </button>
+                                                    )
                                                 )}
                                                 {offer.offererAddress.toLowerCase() === userAddress?.toLowerCase() && (
                                                     <button
@@ -441,7 +471,7 @@ export default function NFTDetail() {
                         <div className="p-10">
                             <div className="flex justify-between items-center mb-10">
                                 <h2 className="text-3xl font-black text-white">Make an Offer</h2>
-                                <button onClick={() => setIsOfferModalOpen(false)} className="p-2 hover:bg-gray-800 rounded-2xl transition-colors">
+                                <button onClick={() => { setIsOfferModalOpen(false); setOfferPrice(''); }} className="p-2 hover:bg-gray-800 rounded-2xl transition-colors">
                                     <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
                                     </svg>

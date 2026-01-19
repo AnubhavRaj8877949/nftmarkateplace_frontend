@@ -128,6 +128,87 @@ function NFTCard({ nft, onListSuccess }: { nft: any, onListSuccess: () => void }
     );
 }
 
+function OfferCard({ offer, onAcceptSuccess }: { offer: Offer, onAcceptSuccess: () => void }) {
+    const { address: userAddress } = useAccount();
+    const { writeContract, data: hash } = useWriteContract();
+    const { isLoading: isTxLoading, isSuccess: isTxSuccess } = useWaitForTransactionReceipt({ hash });
+
+    const { data: isApprovedForAll, refetch: refetchApproval } = useReadContract({
+        address: offer.nft.contractAddress as `0x${string}`,
+        abi: NFT_ABI,
+        functionName: 'isApprovedForAll',
+        args: [userAddress as `0x${string}`, MARKETPLACE_ADDRESS as `0x${string}`],
+        query: {
+            enabled: !!userAddress,
+        }
+    });
+
+    useEffect(() => {
+        if (isTxSuccess) {
+            refetchApproval();
+            onAcceptSuccess();
+        }
+    }, [isTxSuccess, refetchApproval, onAcceptSuccess]);
+
+    const handleApprove = () => {
+        writeContract({
+            address: offer.nft.contractAddress as `0x${string}`,
+            abi: NFT_ABI,
+            functionName: 'setApprovalForAll',
+            args: [MARKETPLACE_ADDRESS as `0x${string}`, true],
+        });
+    };
+
+    const handleAcceptOffer = () => {
+        writeContract({
+            address: MARKETPLACE_ADDRESS as `0x${string}`,
+            abi: MARKETPLACE_ABI,
+            functionName: 'acceptOffer',
+            args: [offer.nft.contractAddress as `0x${string}`, BigInt(offer.nft.tokenId), offer.offerer?.address as `0x${string}`],
+        });
+    };
+
+    return (
+        <div className="bg-gray-800/40 p-6 rounded-[32px] border border-gray-700/50 flex items-center justify-between hover:border-gray-600 transition-all group">
+            <div className="flex items-center space-x-6">
+                <div className="w-24 h-24 rounded-2xl overflow-hidden border border-gray-700">
+                    <img src={offer.nft.image} className="w-full h-full object-cover" alt="nft" />
+                </div>
+                <div>
+                    <h3 className="text-xl font-black text-white mb-1">{offer.nft.name}</h3>
+                    <p className="text-sm font-bold text-blue-400 mb-2">{offer.price} CINT</p>
+                    <div className="flex items-center space-x-2">
+                        <div className="w-5 h-5 rounded-md bg-gray-700 flex items-center justify-center text-[8px] font-black">
+                            {offer.offerer?.address.slice(2, 4).toUpperCase()}
+                        </div>
+                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">From {offer.offerer?.address.slice(0, 8)}...</p>
+                    </div>
+                </div>
+            </div>
+            <div className="flex flex-col space-y-2">
+                {!isApprovedForAll ? (
+                    <button
+                        onClick={handleApprove}
+                        disabled={isTxLoading}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-2xl font-black text-sm transition-all shadow-xl shadow-blue-900/20 disabled:opacity-50"
+                    >
+                        {isTxLoading ? 'Approving...' : 'Approve'}
+                    </button>
+                ) : (
+                    <button
+                        onClick={handleAcceptOffer}
+                        disabled={isTxLoading}
+                        className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-2xl font-black text-sm transition-all shadow-xl shadow-green-900/20 disabled:opacity-50"
+                    >
+                        {isTxLoading ? 'Processing...' : 'Accept'}
+                    </button>
+                )}
+                <Link to={`/nft/${offer.nft.contractAddress}/${offer.nft.tokenId}`} className="text-center text-[10px] font-black text-gray-500 hover:text-white transition-colors uppercase tracking-widest">View NFT</Link>
+            </div>
+        </div>
+    );
+}
+
 export default function Profile() {
     const { address } = useParams();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -181,16 +262,9 @@ export default function Profile() {
         refetchOffersMade();
     };
 
-    const { writeContract, data: hash } = useWriteContract();
 
-    useEffect(() => {
-        if (hash) {
-            // Give indexer 2 seconds to catch up before refetching
-            setTimeout(() => {
-                refetchAll();
-            }, 2000);
-        }
-    }, [hash]);
+
+
 
     const isLoading = isNftsLoading || isListingsLoading || isOffersReceivedLoading || isOffersMadeLoading;
 
@@ -205,20 +279,11 @@ export default function Profile() {
     const listedTokenIds = new Set(activeListings?.map(l => l.nft.tokenId));
     const unlistedNfts = nfts?.filter(nft => !listedTokenIds.has(nft.tokenId)) || [];
 
-    const handleAcceptOffer = (nftAddress: string, tokenId: string, offerer: string) => {
-        writeContract({
-            address: MARKETPLACE_ADDRESS as `0x${string}`,
-            abi: MARKETPLACE_ABI,
-            functionName: 'acceptOffer',
-            args: [nftAddress as `0x${string}`, BigInt(tokenId), offerer as `0x${string}`],
-        });
-    };
+
 
     const tabs = [
         { id: 'collection', label: 'Collection', count: unlistedNfts.length },
         { id: 'listings', label: 'Listings', count: activeListings?.length || 0 },
-        { id: 'received', label: 'Offers Received', count: offersReceived?.length || 0 },
-        { id: 'made', label: 'Offers Made', count: offersMade?.length || 0 },
     ];
 
     return (
@@ -310,76 +375,7 @@ export default function Profile() {
                         </section>
                     )}
 
-                    {activeTab === 'received' && (
-                        <section>
-                            {offersReceived?.length === 0 ? (
-                                <div className="bg-gray-800/20 rounded-[48px] p-32 text-center border-2 border-dashed border-gray-800">
-                                    <p className="text-gray-500 text-2xl font-black">No offers received yet.</p>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    {offersReceived?.map((offer) => (
-                                        <div key={offer.id} className="bg-gray-800/40 p-6 rounded-[32px] border border-gray-700/50 flex items-center justify-between hover:border-gray-600 transition-all group">
-                                            <div className="flex items-center space-x-6">
-                                                <div className="w-24 h-24 rounded-2xl overflow-hidden border border-gray-700">
-                                                    <img src={offer.nft.image} className="w-full h-full object-cover" alt="nft" />
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-xl font-black text-white mb-1">{offer.nft.name}</h3>
-                                                    <p className="text-sm font-bold text-blue-400 mb-2">{offer.price} CINT</p>
-                                                    <div className="flex items-center space-x-2">
-                                                        <div className="w-5 h-5 rounded-md bg-gray-700 flex items-center justify-center text-[8px] font-black">
-                                                            {offer.offerer?.address.slice(2, 4).toUpperCase()}
-                                                        </div>
-                                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">From {offer.offerer?.address.slice(0, 8)}...</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="flex flex-col space-y-2">
-                                                <button
-                                                    onClick={() => handleAcceptOffer(offer.nft.contractAddress, offer.nft.tokenId, offer.offerer?.address || "")}
-                                                    className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-2xl font-black text-sm transition-all shadow-xl shadow-green-900/20"
-                                                >
-                                                    Accept
-                                                </button>
-                                                <Link to={`/nft/${offer.nft.contractAddress}/${offer.nft.tokenId}`} className="text-center text-[10px] font-black text-gray-500 hover:text-white transition-colors uppercase tracking-widest">View NFT</Link>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </section>
-                    )}
 
-                    {activeTab === 'made' && (
-                        <section>
-                            {offersMade?.length === 0 ? (
-                                <div className="bg-gray-800/20 rounded-[48px] p-32 text-center border-2 border-dashed border-gray-800">
-                                    <p className="text-gray-500 text-2xl font-black">You haven't made any offers yet.</p>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    {offersMade?.map((offer) => (
-                                        <div key={offer.id} className="bg-gray-800/40 p-6 rounded-[32px] border border-gray-700/50 flex items-center justify-between hover:border-gray-600 transition-all">
-                                            <div className="flex items-center space-x-6">
-                                                <div className="w-24 h-24 rounded-2xl overflow-hidden border border-gray-700">
-                                                    <img src={offer.nft.image} className="w-full h-full object-cover" alt="nft" />
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-xl font-black text-white mb-1">{offer.nft.name}</h3>
-                                                    <p className="text-sm font-bold text-blue-400 mb-1">{offer.price} CINT</p>
-                                                    <span className="bg-blue-500/10 text-blue-400 px-3 py-1 rounded-lg text-[10px] font-black border border-blue-500/20 uppercase tracking-widest">Active Offer</span>
-                                                </div>
-                                            </div>
-                                            <Link to={`/nft/${offer.nft.contractAddress}/${offer.nft.tokenId}`} className="bg-gray-700 hover:bg-gray-600 text-white px-8 py-3 rounded-2xl font-black text-sm transition-all">
-                                                View NFT
-                                            </Link>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </section>
-                    )}
                 </div>
             </div>
         </div>

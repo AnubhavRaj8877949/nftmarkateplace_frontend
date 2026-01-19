@@ -1,23 +1,27 @@
 import { Link } from 'react-router-dom';
 import { WalletConnect } from './WalletConnect';
-import { useAccount, useDisconnect } from 'wagmi';
+import { useAccount, useBalance } from 'wagmi';
+import { useAuth } from '../context/AuthContext';
 import { useState, useEffect } from 'react';
 import { BACKEND_URL } from '../constants';
 
 export function Navbar() {
-    const { address, isConnected } = useAccount();
-    const { disconnect } = useDisconnect();
+    const { address } = useAccount();
+    const { isAuthenticated, logout } = useAuth();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const { data: balance } = useBalance({
+        address: address,
+    });
 
     useEffect(() => {
-        if (isConnected && address) {
+        if (isAuthenticated && address) {
             fetch(`${BACKEND_URL}/users`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ address }),
             }).catch(err => console.error("Error onboarding user:", err));
         }
-    }, [isConnected, address]);
+    }, [isAuthenticated, address]);
 
     const copyToClipboard = () => {
         if (address) {
@@ -39,11 +43,16 @@ export function Navbar() {
             </div>
 
             <div className="flex items-center space-x-4">
-                {!isConnected ? (
+                {!isAuthenticated ? (
                     <WalletConnect />
                 ) : (
                     <div className="relative">
                         <div className="flex items-center bg-gray-800 rounded-2xl border border-gray-700 p-1 pl-4 space-x-3">
+                            {balance && (
+                                <span className="text-sm font-bold text-gray-300 mr-2">
+                                    {parseFloat(balance.formatted).toFixed(4)} {balance.symbol}
+                                </span>
+                            )}
                             <span className="text-sm font-bold text-gray-300">
                                 {address?.slice(0, 6)}...{address?.slice(-4)}
                             </span>
@@ -81,7 +90,7 @@ export function Navbar() {
                                 </div>
                                 <div className="p-2 border-t border-gray-700 bg-gray-900/30">
                                     <button
-                                        onClick={() => { disconnect(); setIsDropdownOpen(false); }}
+                                        onClick={() => { logout(); setIsDropdownOpen(false); }}
                                         className="w-full flex items-center space-x-3 px-4 py-3 hover:bg-red-500/10 rounded-xl transition-colors group"
                                     >
                                         <span className="text-sm font-bold text-red-500">Disconnect</span>

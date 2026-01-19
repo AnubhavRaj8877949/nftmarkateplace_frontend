@@ -1,5 +1,6 @@
 "use client";
 import * as React from 'react';
+import { AuthProvider } from './context/AuthContext';
 import {
     sepolia,
     polygonAmoy,
@@ -10,7 +11,7 @@ import { injected } from 'wagmi/connectors';
 
 import { defineChain } from 'viem';
 
-const cintaraTestnet = defineChain({
+export const cintaraTestnet = defineChain({
     id: 11001,
     name: 'Cintara Testnet',
     nativeCurrency: {
@@ -44,7 +45,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     return (
         <WagmiProvider config={config}>
             <QueryClientProvider client={queryClient}>
-                {children}
+                <AuthProvider>
+                    {children}
+                </AuthProvider>
             </QueryClientProvider>
         </WagmiProvider>
     );
