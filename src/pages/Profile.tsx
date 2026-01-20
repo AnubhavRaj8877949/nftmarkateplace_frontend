@@ -23,18 +23,18 @@ type Listing = {
     nft: NFT;
 };
 
-type Offer = {
-    id: string;
-    price: string;
-    active: boolean;
-    nft: {
-        tokenId: string;
-        contractAddress: string;
-        name?: string;
-        image?: string;
-    };
-    offerer?: { address: string };
-};
+// type Offer = {
+//     id: string;
+//     price: string;
+//     active: boolean;
+//     nft: {
+//         tokenId: string;
+//         contractAddress: string;
+//         name?: string;
+//         image?: string;
+//     };
+//     offerer?: { address: string };
+// };
 
 
 import { Link, useSearchParams } from 'react-router-dom';
@@ -128,86 +128,86 @@ function NFTCard({ nft, onListSuccess }: { nft: any, onListSuccess: () => void }
     );
 }
 
-function OfferCard({ offer, onAcceptSuccess }: { offer: Offer, onAcceptSuccess: () => void }) {
-    const { address: userAddress } = useAccount();
-    const { writeContract, data: hash } = useWriteContract();
-    const { isLoading: isTxLoading, isSuccess: isTxSuccess } = useWaitForTransactionReceipt({ hash });
+// function OfferCard({ offer, onAcceptSuccess }: { offer: Offer, onAcceptSuccess: () => void }) {
+//     const { address: userAddress } = useAccount();
+//     const { writeContract, data: hash } = useWriteContract();
+//     const { isLoading: isTxLoading, isSuccess: isTxSuccess } = useWaitForTransactionReceipt({ hash });
 
-    const { data: isApprovedForAll, refetch: refetchApproval } = useReadContract({
-        address: offer.nft.contractAddress as `0x${string}`,
-        abi: NFT_ABI,
-        functionName: 'isApprovedForAll',
-        args: [userAddress as `0x${string}`, MARKETPLACE_ADDRESS as `0x${string}`],
-        query: {
-            enabled: !!userAddress,
-        }
-    });
+//     const { data: isApprovedForAll, refetch: refetchApproval } = useReadContract({
+//         address: offer.nft.contractAddress as `0x${string}`,
+//         abi: NFT_ABI,
+//         functionName: 'isApprovedForAll',
+//         args: [userAddress as `0x${string}`, MARKETPLACE_ADDRESS as `0x${string}`],
+//         query: {
+//             enabled: !!userAddress,
+//         }
+//     });
 
-    useEffect(() => {
-        if (isTxSuccess) {
-            refetchApproval();
-            onAcceptSuccess();
-        }
-    }, [isTxSuccess, refetchApproval, onAcceptSuccess]);
+//     useEffect(() => {
+//         if (isTxSuccess) {
+//             refetchApproval();
+//             onAcceptSuccess();
+//         }
+//     }, [isTxSuccess, refetchApproval, onAcceptSuccess]);
 
-    const handleApprove = () => {
-        writeContract({
-            address: offer.nft.contractAddress as `0x${string}`,
-            abi: NFT_ABI,
-            functionName: 'setApprovalForAll',
-            args: [MARKETPLACE_ADDRESS as `0x${string}`, true],
-        });
-    };
+//     const handleApprove = () => {
+//         writeContract({
+//             address: offer.nft.contractAddress as `0x${string}`,
+//             abi: NFT_ABI,
+//             functionName: 'setApprovalForAll',
+//             args: [MARKETPLACE_ADDRESS as `0x${string}`, true],
+//         });
+//     };
 
-    const handleAcceptOffer = () => {
-        writeContract({
-            address: MARKETPLACE_ADDRESS as `0x${string}`,
-            abi: MARKETPLACE_ABI,
-            functionName: 'acceptOffer',
-            args: [offer.nft.contractAddress as `0x${string}`, BigInt(offer.nft.tokenId), offer.offerer?.address as `0x${string}`],
-        });
-    };
+//     const handleAcceptOffer = () => {
+//         writeContract({
+//             address: MARKETPLACE_ADDRESS as `0x${string}`,
+//             abi: MARKETPLACE_ABI,
+//             functionName: 'acceptOffer',
+//             args: [offer.nft.contractAddress as `0x${string}`, BigInt(offer.nft.tokenId), offer.offerer?.address as `0x${string}`],
+//         });
+//     };
 
-    return (
-        <div className="bg-gray-800/40 p-6 rounded-[32px] border border-gray-700/50 flex items-center justify-between hover:border-gray-600 transition-all group">
-            <div className="flex items-center space-x-6">
-                <div className="w-24 h-24 rounded-2xl overflow-hidden border border-gray-700">
-                    <img src={offer.nft.image} className="w-full h-full object-cover" alt="nft" />
-                </div>
-                <div>
-                    <h3 className="text-xl font-black text-white mb-1">{offer.nft.name}</h3>
-                    <p className="text-sm font-bold text-blue-400 mb-2">{offer.price} CINT</p>
-                    <div className="flex items-center space-x-2">
-                        <div className="w-5 h-5 rounded-md bg-gray-700 flex items-center justify-center text-[8px] font-black">
-                            {offer.offerer?.address.slice(2, 4).toUpperCase()}
-                        </div>
-                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">From {offer.offerer?.address.slice(0, 8)}...</p>
-                    </div>
-                </div>
-            </div>
-            <div className="flex flex-col space-y-2">
-                {!isApprovedForAll ? (
-                    <button
-                        onClick={handleApprove}
-                        disabled={isTxLoading}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-2xl font-black text-sm transition-all shadow-xl shadow-blue-900/20 disabled:opacity-50"
-                    >
-                        {isTxLoading ? 'Approving...' : 'Approve'}
-                    </button>
-                ) : (
-                    <button
-                        onClick={handleAcceptOffer}
-                        disabled={isTxLoading}
-                        className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-2xl font-black text-sm transition-all shadow-xl shadow-green-900/20 disabled:opacity-50"
-                    >
-                        {isTxLoading ? 'Processing...' : 'Accept'}
-                    </button>
-                )}
-                <Link to={`/nft/${offer.nft.contractAddress}/${offer.nft.tokenId}`} className="text-center text-[10px] font-black text-gray-500 hover:text-white transition-colors uppercase tracking-widest">View NFT</Link>
-            </div>
-        </div>
-    );
-}
+//     return (
+//         <div className="bg-gray-800/40 p-6 rounded-[32px] border border-gray-700/50 flex items-center justify-between hover:border-gray-600 transition-all group">
+//             <div className="flex items-center space-x-6">
+//                 <div className="w-24 h-24 rounded-2xl overflow-hidden border border-gray-700">
+//                     <img src={offer.nft.image} className="w-full h-full object-cover" alt="nft" />
+//                 </div>
+//                 <div>
+//                     <h3 className="text-xl font-black text-white mb-1">{offer.nft.name}</h3>
+//                     <p className="text-sm font-bold text-blue-400 mb-2">{offer.price} CINT</p>
+//                     <div className="flex items-center space-x-2">
+//                         <div className="w-5 h-5 rounded-md bg-gray-700 flex items-center justify-center text-[8px] font-black">
+//                             {offer.offerer?.address.slice(2, 4).toUpperCase()}
+//                         </div>
+//                         <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">From {offer.offerer?.address.slice(0, 8)}...</p>
+//                     </div>
+//                 </div>
+//             </div>
+//             <div className="flex flex-col space-y-2">
+//                 {!isApprovedForAll ? (
+//                     <button
+//                         onClick={handleApprove}
+//                         disabled={isTxLoading}
+//                         className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-2xl font-black text-sm transition-all shadow-xl shadow-blue-900/20 disabled:opacity-50"
+//                     >
+//                         {isTxLoading ? 'Approving...' : 'Approve'}
+//                     </button>
+//                 ) : (
+//                     <button
+//                         onClick={handleAcceptOffer}
+//                         disabled={isTxLoading}
+//                         className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-2xl font-black text-sm transition-all shadow-xl shadow-green-900/20 disabled:opacity-50"
+//                     >
+//                         {isTxLoading ? 'Processing...' : 'Accept'}
+//                     </button>
+//                 )}
+//                 <Link to={`/nft/${offer.nft.contractAddress}/${offer.nft.tokenId}`} className="text-center text-[10px] font-black text-gray-500 hover:text-white transition-colors uppercase tracking-widest">View NFT</Link>
+//             </div>
+//         </div>
+//     );
+// }
 
 export default function Profile() {
     const { address } = useParams();
@@ -237,36 +237,36 @@ export default function Profile() {
         enabled: !!address,
     });
 
-    const { data: offersReceived, isLoading: isOffersReceivedLoading, refetch: refetchOffersReceived } = useQuery<Offer[]>({
-        queryKey: ['offers-received', address],
-        queryFn: async () => {
-            const res = await fetch(`${BACKEND_URL}/offers/received/${address}`);
-            return res.json();
-        },
-        enabled: !!address,
-    });
+    // const { data: offersReceived, isLoading: isOffersReceivedLoading, refetch: refetchOffersReceived } = useQuery<Offer[]>({
+    //     queryKey: ['offers-received', address],
+    //     queryFn: async () => {
+    //         const res = await fetch(`${BACKEND_URL}/offers/received/${address}`);
+    //         return res.json();
+    //     },
+    //     enabled: !!address,
+    // });
 
-    const { data: offersMade, isLoading: isOffersMadeLoading, refetch: refetchOffersMade } = useQuery<Offer[]>({
-        queryKey: ['offers-made', address],
-        queryFn: async () => {
-            const res = await fetch(`${BACKEND_URL}/offers/made/${address}`);
-            return res.json();
-        },
-        enabled: !!address,
-    });
+    // const { data: offersMade, isLoading: isOffersMadeLoading, refetch: refetchOffersMade } = useQuery<Offer[]>({
+    //     queryKey: ['offers-made', address],
+    //     queryFn: async () => {
+    //         const res = await fetch(`${BACKEND_URL}/offers/made/${address}`);
+    //         return res.json();
+    //     },
+    //     enabled: !!address,
+    // });
 
     const refetchAll = () => {
         refetchNfts();
         refetchListings();
-        refetchOffersReceived();
-        refetchOffersMade();
+        // refetchOffersReceived();
+        // refetchOffersMade();
     };
 
 
 
 
 
-    const isLoading = isNftsLoading || isListingsLoading || isOffersReceivedLoading || isOffersMadeLoading;
+    const isLoading = isNftsLoading || isListingsLoading
 
     if (isLoading) return (
         <div className="flex justify-center items-center h-[60vh]">

@@ -81,12 +81,11 @@ export default function NFTDetail() {
     const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
     const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
     const [offerPrice, setOfferPrice] = useState('');
-    const [listPrice, setListPrice] = useState('');
+    // const [listPrice] = useState('');
 
     const activeListing = nft?.listings.find(l => l.active);
     const isOwner = userAddress?.toLowerCase() === nft?.ownerAddress.toLowerCase();
     const userActiveOffer = nft?.offers.find(o => o.offererAddress.toLowerCase() === userAddress?.toLowerCase() && o.active);
-    console.log(" nft:", nft)
     const handleBuy = () => {
         if (!activeListing) return;
         writeContract({
@@ -140,40 +139,40 @@ export default function NFTDetail() {
         });
     };
 
-    const handleList = () => {
-        if (!listPrice) return;
+    // const handleList = () => {
+    //     if (!listPrice) return;
 
-        // First approve marketplace
-        writeContract({
-            address: nft?.contractAddress as `0x${string}`,
-            abi: [{
-                name: 'approve',
-                type: 'function',
-                stateMutability: 'nonpayable',
-                inputs: [{ name: 'to', type: 'address' }, { name: 'tokenId', type: 'uint256' }],
-                outputs: []
-            }],
-            functionName: 'approve',
-            args: [MARKETPLACE_ADDRESS as `0x${string}`, BigInt(nft?.tokenId || "0")],
-        });
+    //     // First approve marketplace
+    //     writeContract({
+    //         address: nft?.contractAddress as `0x${string}`,
+    //         abi: [{
+    //             name: 'approve',
+    //             type: 'function',
+    //             stateMutability: 'nonpayable',
+    //             inputs: [{ name: 'to', type: 'address' }, { name: 'tokenId', type: 'uint256' }],
+    //             outputs: []
+    //         }],
+    //         functionName: 'approve',
+    //         args: [MARKETPLACE_ADDRESS as `0x${string}`, BigInt(nft?.tokenId || "0")],
+    //     });
 
-        // Then list (this should ideally be a two-step process or handled via a separate approval flow, 
-        // but for simplicity we'll assume approval is done or user will do it. 
-        // Actually, let's just call list, if not approved it will fail or we can check approval.
-        // For this task, let's assume we just call list. The contract checks approval.
-        // Wait, the contract says: require(nft.isApprovedForAll... || nft.getApproved...
-        // So we should probably have an approve button or handle it. 
-        // Let's just add the list call for now, user might have approved already or we can add approval logic later if needed.
-        // Better: Just call list. If it fails, user needs to approve. 
-        // Actually, let's chain them or just provide the list button.
+    //     // Then list (this should ideally be a two-step process or handled via a separate approval flow, 
+    //     // but for simplicity we'll assume approval is done or user will do it. 
+    //     // Actually, let's just call list, if not approved it will fail or we can check approval.
+    //     // For this task, let's assume we just call list. The contract checks approval.
+    //     // Wait, the contract says: require(nft.isApprovedForAll... || nft.getApproved...
+    //     // So we should probably have an approve button or handle it. 
+    //     // Let's just add the list call for now, user might have approved already or we can add approval logic later if needed.
+    //     // Better: Just call list. If it fails, user needs to approve. 
+    //     // Actually, let's chain them or just provide the list button.
 
-        writeContract({
-            address: MARKETPLACE_ADDRESS as `0x${string}`,
-            abi: MARKETPLACE_ABI,
-            functionName: 'list',
-            args: [nft?.contractAddress as `0x${string}`, BigInt(nft?.tokenId || "0"), parseEther(listPrice)],
-        });
-    };
+    //     writeContract({
+    //         address: MARKETPLACE_ADDRESS as `0x${string}`,
+    //         abi: MARKETPLACE_ABI,
+    //         functionName: 'list',
+    //         args: [nft?.contractAddress as `0x${string}`, BigInt(nft?.tokenId || "0"), parseEther(listPrice)],
+    //     });
+    // };
 
     const handleCancelListing = () => {
         writeContract({
