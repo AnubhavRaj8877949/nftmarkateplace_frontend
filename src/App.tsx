@@ -16,6 +16,7 @@ function App() {
           <main>
             <Routes>
               <Route path="/" element={<Home />} />
+              <Route path="/explore" element={<Home />} />
               <Route path="/create" element={
                 <ProtectedRoute>
                   <Create />

@@ -39,7 +39,7 @@ export default function NFTPriceSection({
                         <p className="text-gray-400 text-sm mb-2 font-medium">Current price</p>
                         <div className="flex items-baseline space-x-2">
                             <span className="text-4xl font-extrabold text-white">{activeListing.price} CINT</span>
-                            <span className="text-gray-500 text-sm font-semibold">($ --)</span>
+                            {/* <span className="text-gray-500 text-sm font-semibold">($ --)</span> */}
                         </div>
                     </div>
                 ) : (
