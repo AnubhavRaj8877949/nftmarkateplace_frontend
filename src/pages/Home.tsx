@@ -99,7 +99,7 @@ export default function Home() {
                         >
                             All
                         </button>
-                        {collections?.map(col => (
+                        {Array.isArray(collections) && collections.map(col => (
                             <button
                                 key={col.id}
                                 onClick={() => setSelectedCollectionId(col.id)}
