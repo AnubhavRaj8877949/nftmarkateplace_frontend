@@ -1,9 +1,9 @@
-import { useState, ReactNode } from 'react';
+import { useState } from 'react';
 
 type Props = {
     title: string;
-    icon: ReactNode;
-    children: ReactNode;
+    icon: any;
+    children: any;
     defaultOpen?: boolean;
     className?: string; // Allow extra styling
 };

@@ -308,7 +308,9 @@ export default function NFTDetail() {
                             <div>
                                 <div className="flex justify-between mb-2 text-sm font-semibold text-gray-400">
                                     <label>Price</label>
-                                    <span>Balance:  {parseFloat(balance?.formatted).toFixed(4)} {balance?.symbol}</span>
+                                    <span>
+                                        Balance: {balance ? Number(balance.formatted).toFixed(4) : "0.0000"} {balance?.symbol}
+                                    </span>
                                 </div>
                                 <div className="relative">
                                     <input
